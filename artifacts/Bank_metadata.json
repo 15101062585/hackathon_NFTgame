@@ -44,6 +44,24 @@
 			},
 			{
 				"inputs": [],
+				"name": "getTopDepositors",
+				"outputs": [
+					{
+						"internalType": "address[]",
+						"name": "",
+						"type": "address[]"
+					},
+					{
+						"internalType": "uint256[]",
+						"name": "",
+						"type": "uint256[]"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
 				"name": "transfer",
 				"outputs": [],
 				"stateMutability": "payable",
@@ -104,11 +122,11 @@
 	},
 	"sources": {
 		"day03/Bank.sol": {
-			"keccak256": "0x89ff7afbb277b9abfc047242ac55df081b4a867e70b0388af21d67da8773160e",
+			"keccak256": "0xe19adc38630a442f523340b64c8c68fdae8ef42427ba583c80e52485ee287781",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://6b7412b6b21244c039e9dfa98ca0c19c9e3a98c35d5b15ead10d44a306328073",
-				"dweb:/ipfs/QmYJCniPDVrPPDxmTZC6A5A6oS2H5PeNnavwkkmJaKGx9j"
+				"bzz-raw://1601bbbb6c4b26fb7d60977e11ffba2a90ae2a0d49e0eb8e54cd33066c764918",
+				"dweb:/ipfs/QmZcSH6p5NhUfVCDS1wyWcteZydUcL1qHdBYMKaFrmgHEv"
 			]
 		}
 	},
