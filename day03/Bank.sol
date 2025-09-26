@@ -1,11 +1,12 @@
 //SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 import "day04/IBank.sol";
+import "hardhat/console.sol";
 contract Bank is IBank{
     //定义mapping
     mapping(address => uint256) public balances;
     //定义常量
-    address public immutable admin ;
+    address public admin;
     //定义数组
     address[3] public uintArray;
     //构造器 初始化当前部署合约为管理员
@@ -13,7 +14,10 @@ contract Bank is IBank{
         admin = msg.sender;
     }
     //管理员验证
-    modifier onlyAdmin(){
+    modifier onlyAdmin  () virtual {
+        console.log("admin", admin);
+        console.log("msg.sender", msg.sender);
+        console.log("flag", admin==msg.sender);
         require(msg.sender == admin,"Only admin can call this function");
         _;
     }
@@ -115,5 +119,8 @@ contract Bank is IBank{
         return (userAddress,userAmount);
 
     }
+    
+    receive() external payable { 
 
+    }
 }

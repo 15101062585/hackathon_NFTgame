@@ -20,7 +20,7 @@
 				],
 				"name": "adminWithdraw",
 				"outputs": [],
-				"stateMutability": "nonpayable",
+				"stateMutability": "payable",
 				"type": "function"
 			},
 			{
@@ -35,6 +35,17 @@
 				],
 				"stateMutability": "view",
 				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "withdrawFunds",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"stateMutability": "payable",
+				"type": "receive"
 			}
 		],
 		"devdoc": {
@@ -65,19 +76,19 @@
 	},
 	"sources": {
 		"day03/Bank.sol": {
-			"keccak256": "0xd6f2141c32ad19f239ab54032b6c05275fb32cfae8b69f9d5c12c091ac39f839",
+			"keccak256": "0x9e7a3dc81ed3dad208faf332328bca50ddaff37f17e02301eb08f02c557b4a71",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://6aebd98d4a08dfc77ab6225ba432d2e3035d3f6e8c1a176d8ec078e906b25ab0",
-				"dweb:/ipfs/QmQUsiqUufGBzGK8i6VhkrG2roSeAcgRE39TxFfLRyGnsa"
+				"bzz-raw://18246ba5c3ca0e2cabd48188c1211f92d20505e2744a21377660c8c13b1f1120",
+				"dweb:/ipfs/QmYPpxbtvzDi9AWcvRkZ73pMpjTkMHfkf6sd1w9armvjtZ"
 			]
 		},
 		"day04/Admin.sol": {
-			"keccak256": "0x58cb23e7d4cd5f3455dc6a781331a1ffc35569e4803cf802f75d09eb837a4f4c",
+			"keccak256": "0x6a8540fb71e6f02a4f0865a4a5729515f071bf6680abd442e8382625d3798682",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://106b78e62a0ac8872e49abf329b03588448514a1d3979d4d9e021ef3c69fffe2",
-				"dweb:/ipfs/QmZgUyadoFz4qEw1yUaSq9tzGZfUk5gQSXfDdWfmsuYsVy"
+				"bzz-raw://ae2ab15ceff7f92756cfec1754da7255a8d19048fb853082dbea1ac8068c3341",
+				"dweb:/ipfs/QmRNyo8aTCWNgS9t1hTafUzkUh9qc6z9Wj53oj9Z5fCrUS"
 			]
 		},
 		"day04/IBank.sol": {
@@ -86,6 +97,14 @@
 			"urls": [
 				"bzz-raw://46bb9d814d430003299eba66741224d61a1d3b32be41301dcd620786c36c4a59",
 				"dweb:/ipfs/QmQK1SHMy2gY1heyJNjmzPjsFuyvrfLRJxGfZKLuvitbgh"
+			]
+		},
+		"hardhat/console.sol": {
+			"keccak256": "0x7434453e6d3b7d0e5d0eb7846ffdbc27f0ccf3b163591263739b628074dc103a",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://49355f780520494d1d5a0f01858385e51bb5280ce0ecfb960f16995065dca395",
+				"dweb:/ipfs/QmSwJ6C5QLz6xKeQZS8wbwjU1KxRFTYfwbGmtzisd5sRW4"
 			]
 		}
 	},
