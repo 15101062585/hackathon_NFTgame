@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
-
-contract Bank{
+import "day04/IBank.sol";
+contract Bank is IBank{
     //定义mapping
     mapping(address => uint256) public balances;
     //定义常量
@@ -26,7 +26,7 @@ contract Bank{
 
     }
     //转账后将数据记录到mapping中
-    function transfer () public  payable{
+    function transfer () public  payable virtual {
         balances[msg.sender] += msg.value;
         
         

@@ -7,8 +7,16 @@
 		"abi": [
 			{
 				"inputs": [],
-				"stateMutability": "nonpayable",
-				"type": "constructor"
+				"name": "addressNew",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
 			},
 			{
 				"inputs": [],
@@ -70,6 +78,19 @@
 			{
 				"inputs": [
 					{
+						"internalType": "address",
+						"name": "_newAdmin",
+						"type": "address"
+					}
+				],
+				"name": "transferAdmin",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
 						"internalType": "uint256",
 						"name": "",
 						"type": "uint256"
@@ -107,7 +128,7 @@
 	},
 	"settings": {
 		"compilationTarget": {
-			"day03/Bank.sol": "Bank"
+			"day04/BigBank.sol": "BigBank"
 		},
 		"evmVersion": "prague",
 		"libraries": {},
@@ -129,12 +150,20 @@
 				"dweb:/ipfs/QmQUsiqUufGBzGK8i6VhkrG2roSeAcgRE39TxFfLRyGnsa"
 			]
 		},
-		"day04/IBank.sol": {
-			"keccak256": "0x38091422ee4bcb060bdc197b89c0b563c7af41e644f7a0a38b7718638ae81f3c",
+		"day04/BigBank.sol": {
+			"keccak256": "0x03c6fb10f25066ecb75643ce46c71361d7a89c87b714da83f26e1aef4b45c77c",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://46bb9d814d430003299eba66741224d61a1d3b32be41301dcd620786c36c4a59",
-				"dweb:/ipfs/QmQK1SHMy2gY1heyJNjmzPjsFuyvrfLRJxGfZKLuvitbgh"
+				"bzz-raw://1f15fc445261eaf6acbdb097c3a794f5807dff5b97633a03b2cc758e87b45e86",
+				"dweb:/ipfs/QmRddyE3dDTSvccHoSco6eA9SNTN4KJshpe5irQoBNwRET"
+			]
+		},
+		"day04/IBank.sol": {
+			"keccak256": "0x0f16ca57d05b9cf7fde6cbcdb218d81f622ea9da5856414d5b5991bd3367f5c2",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://001023c52b48e8787da8df8d28e1e53ad7fa0dc73aeaf066e0953c7fee4f7139",
+				"dweb:/ipfs/QmafawQgGhwVTgp8JGA1L6vWdPVGffUNt12cxuHF2KMiEt"
 			]
 		}
 	},
