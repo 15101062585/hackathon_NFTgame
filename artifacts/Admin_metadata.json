@@ -76,11 +76,11 @@
 	},
 	"sources": {
 		"day03/Bank.sol": {
-			"keccak256": "0x9e7a3dc81ed3dad208faf332328bca50ddaff37f17e02301eb08f02c557b4a71",
+			"keccak256": "0xf248174e857be49c8a73c5c25be67b8cc6c180ebb41d989349757808b27e40e6",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://18246ba5c3ca0e2cabd48188c1211f92d20505e2744a21377660c8c13b1f1120",
-				"dweb:/ipfs/QmYPpxbtvzDi9AWcvRkZ73pMpjTkMHfkf6sd1w9armvjtZ"
+				"bzz-raw://40b2275dafaf0a2f0dc77ea91cd90f6040fd7930e447ce0c9ea0dcdb175a5bc5",
+				"dweb:/ipfs/QmdkyTCC8qP8RPRnkWZYfScbUZMMJi2ewFUD7xB93sF1yb"
 			]
 		},
 		"day04/Admin.sol": {

@@ -27,7 +27,7 @@ contract Bank is IBank{
     function withdraw () external  onlyAdmin payable {
         
         payable(admin).transfer(address(this).balance);
-
+        
     }
     //转账后将数据记录到mapping中
     function transfer () public  payable virtual {
