@@ -1,0 +1,75 @@
+{
+	"compiler": {
+		"version": "0.8.30+commit.73712a01"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_from",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "_to",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_value",
+						"type": "uint256"
+					}
+				],
+				"name": "tokenReceived",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"day05/BaseErc20.sol": "ITokenReceiver"
+		},
+		"evmVersion": "prague",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"day05/BaseErc20.sol": {
+			"keccak256": "0xf58db283fd7b3e37145dd79cd7381b4c6ad4acf91f9562b278e11de354d41c08",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://f43033c506567572df4b60abcbb406432247821494d0d85d78edc952204c3333",
+				"dweb:/ipfs/QmZAtJvvBeBYbRpxvJH6D2W452s9hozxSDYeDCHUggxYAi"
+			]
+		}
+	},
+	"version": 1
+}

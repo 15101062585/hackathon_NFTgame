@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+interface  ITokenReceiver {
+    function tokenReceived(address _from,address _to,uint256 _value) external returns(bool);
+}
+
+
 contract BaseERC20 {
     string public name;
     string public symbol;
@@ -82,4 +87,40 @@ contract BaseERC20 {
         // 返回授权额度
         return allowances[_owner][_spender];
     }
+    //转账
+    function transferWithCallback(address _to, uint256 _value)public returns(bool success){
+        // 确保接收地址不为0
+        require(_to != address(0), "ERC20: transfer to the zero address");
+        // 确保发送者余额充足
+        require(_value <= balances[msg.sender], "ERC20: transfer amount exceeds balance");
+
+        balances[msg.sender] -= _value;
+        balances[_to] += _value;
+
+        // 触发转账事件
+        emit Transfer(msg.sender, _to, _value);
+
+        if(isContract(_to)){
+            try ITokenReceiver(_to).tokenReceived(msg.sender,_to,_value) returns (bool result){
+                return result;
+            }catch {
+                // 如果回调失败，返回true，因为转账本身已经成功
+                return true;
+            }
+        }
+
+        
+    }
+
+    //查看是否是合约地址
+    function isContract(address _addr) private view returns(bool){
+        uint32 size;
+        
+        assembly{
+            size := extcodesize(_addr)
+        }
+        return (size>0);
+    }
+
+    
 }
