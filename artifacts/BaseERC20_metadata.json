@@ -1,6 +1,6 @@
 {
 	"compiler": {
-		"version": "0.8.30+commit.73712a01"
+		"version": "0.8.24+commit.e11b9ed9"
 	},
 	"language": "Solidity",
 	"output": {
@@ -141,6 +141,25 @@
 				"type": "function"
 			},
 			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_addr",
+						"type": "address"
+					}
+				],
+				"name": "isContract",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
 				"inputs": [],
 				"name": "name",
 				"outputs": [
@@ -272,7 +291,7 @@
 		"compilationTarget": {
 			"day05/BaseErc20.sol": "BaseERC20"
 		},
-		"evmVersion": "prague",
+		"evmVersion": "cancun",
 		"libraries": {},
 		"metadata": {
 			"bytecodeHash": "ipfs"
@@ -285,11 +304,11 @@
 	},
 	"sources": {
 		"day05/BaseErc20.sol": {
-			"keccak256": "0xf58db283fd7b3e37145dd79cd7381b4c6ad4acf91f9562b278e11de354d41c08",
+			"keccak256": "0xe25b764c951724869545db1ee38b5a75d05e54ce270bfb17760bba165da157e8",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://f43033c506567572df4b60abcbb406432247821494d0d85d78edc952204c3333",
-				"dweb:/ipfs/QmZAtJvvBeBYbRpxvJH6D2W452s9hozxSDYeDCHUggxYAi"
+				"bzz-raw://ac7d2fac38da4acd91e527af0cd8606e29e6f43582ed2a35dff40c49e8b16249",
+				"dweb:/ipfs/QmZZNE5Qx357qysdNQ5mXMENTbDCrgBhMpRCGiK7HdzAZe"
 			]
 		}
 	},

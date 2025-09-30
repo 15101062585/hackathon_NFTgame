@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 interface  ITokenReceiver {
-    function tokenReceived(address _from,address _to,uint256 _value) external returns(bool);
+    function tokenReceived(address _from,address _to,uint256 _value) external  returns(bool);
 }
 
 
@@ -113,7 +113,7 @@ contract BaseERC20 {
     }
 
     //查看是否是合约地址
-    function isContract(address _addr) private view returns(bool){
+    function isContract(address _addr) public view returns(bool){
         uint32 size;
         
         assembly{
