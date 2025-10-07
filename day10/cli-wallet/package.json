@@ -1,0 +1,13 @@
+{
+  "name": "cli-wallet",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Command line wallet for Sepolia testnet",
+  "main": "wallet.js",
+  "scripts": {
+    "start": "node wallet.js"
+  },
+  "dependencies": {
+    "viem": "^2.0.0"
+  }
+}
