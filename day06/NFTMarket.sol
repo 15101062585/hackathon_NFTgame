@@ -21,8 +21,10 @@ contract NFTMarket{
     mapping(uint256 => ListString) public listings;
 
     // 事件定义
-    event NFTListed(uint256 indexed tokenId, address indexed seller, uint256 price);
-    event NFTBought(uint256 indexed tokenId, address indexed buyer, uint256 price);
+    event NFTListed(uint256 indexed tokenId, address indexed seller, uint256 price, uint256 timestamp);
+    event NFTBought(uint256 indexed tokenId, address indexed buyer, address indexed seller, uint256 price, uint256 timestamp);
+    event NFTCancelled(uint256 indexed tokenId, address indexed seller, uint256 timestamp);
+
 
     // 构造函数
     constructor(MyNft _nftContract, BaseERC20v2 _tokenContract) {
@@ -52,7 +54,7 @@ contract NFTMarket{
         });
 
         // 触发上架事件
-        emit NFTListed(_tokenId, msg.sender, _price);
+        emit NFTListed(_tokenId, msg.sender, _price, block.timestamp);
     }
 
     // 购买NFT
@@ -76,7 +78,7 @@ contract NFTMarket{
         listing.isListed = false;
 
         // 触发购买事件
-        emit NFTBought(_tokenId, msg.sender, listing.price);
+        emit NFTBought(_tokenId, msg.sender, listing.seller, listing.price, block.timestamp);
     }
 
     // 实现tokensReceived方法，支持通过transferWithCallback购买NFT
@@ -108,7 +110,7 @@ contract NFTMarket{
         listing.isListed = false;
 
         // 触发购买事件
-        emit NFTBought(tokenId, _from, listing.price);
+        emit NFTBought(tokenId, _from, listing.seller, listing.price, block.timestamp);
 
         return true;
     }
@@ -126,6 +128,7 @@ contract NFTMarket{
 
         // 标记NFT为已下架
         listing.isListed = false;
+        emit NFTCancelled(_tokenId, msg.sender, block.timestamp);
     }
 
     
