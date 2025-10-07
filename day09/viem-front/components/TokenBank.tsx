@@ -7,6 +7,7 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt
 } from 'wagmi'
+import Link from 'next/link' // 添加这行
 
 const TOKEN_BANK_ADDRESS = '0xa6648A516d8e50A9665Fac19D564Ae44E73b9164'
 const TOKEN_ADDRESS = '0x5F97a3a99B590D93fF798b7dCE5E917d4eEd8778'
@@ -290,6 +291,23 @@ export default function TokenBank() {
 
   return (
     <div className="space-y-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">TokenBank 存款系统</h1>
+            <p className="text-gray-600 mt-1">管理您的代币存款和取款</p>
+          </div>
+          <div className="flex gap-3">
+            <Link 
+              href="/nft-market"
+              className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
+            >
+              <span>🎯</span>
+              NFT 市场监控
+            </Link>
+          </div>
+        </div>
+      </div>
       {/* 调试信息 */}
       <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
         <h3 className="text-lg font-semibold text-yellow-800 mb-2">调试信息</h3>

@@ -9,7 +9,7 @@ import "./globals.css";
 
 // 假设文件为 TypeScript React 文件，尝试添加 .tsx 扩展名
 // 尝试不指定扩展名，让模块解析器自动查找文件
-import { Providers } from "./providers.tsx";
+import { Providers } from "./providers";
 
 
 

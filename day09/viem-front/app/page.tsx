@@ -6,6 +6,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import TokenBank from '@/components/TokenBank'
 import ConnectWallet from '@/components/ConnectWallet'
 
+
+
+
 const queryClient = new QueryClient()
 
 export default function Home() {
