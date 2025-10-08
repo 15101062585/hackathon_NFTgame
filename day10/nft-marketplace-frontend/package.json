@@ -1,0 +1,29 @@
+{
+  "name": "nft-marketplace-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@coinbase/onchainkit": "^0.5.4",
+    "@wagmi/core": "^1.4.13",
+    "@walletconnect/ethereum-provider": "^2.22.1",
+    "@walletconnect/web3-provider": "^1.8.0",
+    "@web3modal/ethers": "^5.1.11",
+    "@web3modal/react": "^2.7.1",
+    "ethers": "^6.15.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "viem": "^2.38.0",
+    "wagmi": "^1.4.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
+    "esbuild": "^0.25.10",
+    "vite": "^4.5.14"
+  }
+}
