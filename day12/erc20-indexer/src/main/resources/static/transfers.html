@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERC20 转账记录监控</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            margin-bottom: 1rem;
+        }
+        .transfer-item {
+            border-left: 4px solid #0d6efd;
+            padding-left: 1rem;
+            margin-bottom: 1rem;
+        }
+        .transfer-from {
+            color: #dc3545;
+        }
+        .transfer-to {
+            color: #198754;
+        }
+        .loading {
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container mt-4">
+        <!-- 页头 -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>ERC20 转账记录监控面板</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <!-- 查询面板 -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-search me-2"></i>查询面板</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">查询类型</label>
+                            <select class="form-select" v-model="queryType">
+                                <option value="address">按地址查询</option>
+                                <option value="token">按代币查询</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3" v-if="queryType === 'address'">
+                            <label class="form-label">钱包地址</label>
+                            <input type="text" class="form-control" v-model="searchAddress" 
+                                   placeholder="输入 0x 开头的钱包地址">
+                        </div>
+                        
+                        <div class="mb-3" v-if="queryType === 'token'">
+                            <label class="form-label">选择代币</label>
+                            <select class="form-select" v-model="selectedToken">
+                                <option value="">所有代币</option>
+                                <option v-for="token in tokens" :value="token.contractAddress">
+                                    {{ token.symbol }} - {{ token.name }}
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <button class="btn btn-primary w-100" @click="searchTransfers" 
+                                :disabled="!canSearch">
+                            <i class="fas fa-search me-1"></i>查询转账记录
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 索引控制 -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-database me-2"></i>数据索引控制</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">合约地址</label>
+                            <input type="text" class="form-control" v-model="indexContractAddress" 
+                                   placeholder="输入要索引的合约地址">
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label class="form-label">起始区块</label>
+                                <input type="number" class="form-control" v-model="fromBlock" 
+                                       placeholder="起始区块">
+                            </div>
+                            <div class="col">
+                                <label class="form-label">结束区块</label>
+                                <input type="number" class="form-control" v-model="toBlock" 
+                                       placeholder="结束区块">
+                            </div>
+                        </div>
+                        <button class="btn btn-success w-100" @click="startIndexing" 
+                                :disabled="!canIndex">
+                            <i class="fas fa-play me-1"></i>开始历史数据索引
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 结果展示 -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">转账记录</h5>
+                        <span class="badge bg-primary" v-if="totalItems > 0">
+                            共 {{ totalItems }} 条记录
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <!-- 加载指示器 -->
+                        <div class="text-center my-4" v-if="loading">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">加载中...</span>
+                            </div>
+                            <p class="mt-2">正在查询数据...</p>
+                        </div>
+
+                        <!-- 空状态 -->
+                        <div class="text-center my-4" v-if="!loading && transfers.length === 0">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">暂无转账记录</p>
+                        </div>
+
+                        <!-- 转账列表 -->
+                        <div v-if="!loading && transfers.length > 0">
+                            <div class="transfer-item" v-for="transfer in transfers" :key="transfer.id">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <strong>代币:</strong> 
+                                        <span class="badge bg-secondary">
+                                            {{ transfer.token.symbol }}
+                                        </span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>从:</strong> 
+                                        <span class="transfer-from">{{ shortenAddress(transfer.fromAddress) }}</span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>到:</strong> 
+                                        <span class="transfer-to">{{ shortenAddress(transfer.toAddress) }}</span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>金额:</strong> 
+                                        {{ formatValue(transfer.value, transfer.token.decimals) }}
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-md-6">
+                                        <small class="text-muted">
+                                            <i class="fas fa-hashtag me-1"></i>区块: {{ transfer.blockNumber }}
+                                        </small>
+                                    </div>
+                                    <div class="col-md-6 text-end">
+                                        <small class="text-muted">
+                                            {{ formatTimestamp(transfer.timestamp) }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 分页 -->
+                            <nav class="mt-4" v-if="totalPages > 1">
+                                <ul class="pagination justify-content-center">
+                                    <li class="page-item" :class="{ disabled: currentPage === 0 }">
+                                        <a class="page-link" href="#" @click="changePage(currentPage - 1)">上一页</a>
+                                    </li>
+                                    <li class="page-item" v-for="page in pageRange" 
+                                        :class="{ active: page === currentPage }">
+                                        <a class="page-link" href="#" @click="changePage(page)">{{ page + 1 }}</a>
+                                    </li>
+                                    <li class="page-item" :class="{ disabled: currentPage >= totalPages - 1 }">
+                                        <a class="page-link" href="#" @click="changePage(currentPage + 1)">下一页</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+        
+        createApp({
+            setup() {
+                // 响应式数据
+                const queryType = ref('address');
+                const searchAddress = ref('');
+                const selectedToken = ref('');
+                const tokens = ref([]);
+                const transfers = ref([]);
+                const loading = ref(false);
+                const currentPage = ref(0);
+                const totalPages = ref(0);
+                const totalItems = ref(0);
+                const pageSize = 20;
+                
+                // 索引相关数据
+                const indexContractAddress = ref('');
+                const fromBlock = ref('');
+                const toBlock = ref('');
+                
+                // 计算属性
+                const canSearch = computed(() => {
+                    if (queryType.value === 'address') {
+                        return searchAddress.value.trim().length > 0;
+                    } else {
+                        return true; // 代币查询可以查询所有
+                    }
+                });
+                
+                const canIndex = computed(() => {
+                    return indexContractAddress.value.trim().length > 0 && 
+                           fromBlock.value && toBlock.value;
+                });
+                
+                const pageRange = computed(() => {
+                    const range = [];
+                    const start = Math.max(0, currentPage.value - 2);
+                    const end = Math.min(totalPages.value - 1, start + 4);
+                    
+                    for (let i = start; i <= end; i++) {
+                        range.push(i);
+                    }
+                    return range;
+                });
+                
+                // 方法
+                async function searchTransfers() {
+                    if (!canSearch.value) return;
+                    
+                    loading.value = true;
+                    
+                    try {
+                        let url;
+                        if (queryType.value === 'address') {
+                            url = `/api/transfers/address/${searchAddress.value}?page=${currentPage.value}&size=${pageSize}`;
+                        } else {
+                            if (selectedToken.value) {
+                                url = `/api/transfers/token/${selectedToken.value}?page=${currentPage.value}&size=${pageSize}`;
+                            } else {
+                                // 查询所有代币的转账
+                                url = `/api/transfers/token/all?page=${currentPage.value}&size=${pageSize}`;
+                            }
+                        }
+                        
+                        const response = await fetch(url);
+                        const data = await response.json();
+                        
+                        transfers.value = data.transfers;
+                        totalPages.value = data.totalPages;
+                        totalItems.value = data.totalItems;
+                        
+                    } catch (error) {
+                        console.error('查询失败:', error);
+                        alert('查询失败，请查看控制台日志');
+                    } finally {
+                        loading.value = false;
+                    }
+                }
+                
+                function changePage(page) {
+                    if (page >= 0 && page < totalPages.value) {
+                        currentPage.value = page;
+                        searchTransfers();
+                    }
+                }
+                
+                function shortenAddress(address) {
+                    return address ? `${address.substring(0, 6)}...${address.substring(38)}` : '';
+                }
+                
+                function formatValue(value, decimals) {
+                    // 简化实现，实际应该使用 BigNumber 处理大数
+                    const numValue = parseFloat(value);
+                    const divisor = Math.pow(10, decimals);
+                    return (numValue / divisor).toFixed(6);
+                }
+                
+                function formatTimestamp(timestamp) {
+                    return new Date(timestamp * 1000).toLocaleString('zh-CN');
+                }
+                
+                async function startIndexing() {
+                    if (!canIndex.value) return;
+                    
+                    try {
+                        const response = await fetch('/api/transfers/index/historical', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: `contractAddress=${indexContractAddress.value}&fromBlock=${fromBlock.value}&toBlock=${toBlock.value}`
+                        });
+                        
+                        const result = await response.text();
+                        alert(result);
+                    } catch (error) {
+                        console.error('索引失败:', error);
+                        alert('索引失败，请查看控制台日志');
+                    }
+                }
+                
+                async function loadTokens() {
+                    try {
+                        const response = await fetch('/api/transfers/tokens');
+                        tokens.value = await response.json();
+                    } catch (error) {
+                        console.error('加载代币列表失败:', error);
+                    }
+                }
+                
+                // 生命周期
+                onMounted(() => {
+                    loadTokens();
+                });
+                
+                return {
+                    queryType,
+                    searchAddress,
+                    selectedToken,
+                    tokens,
+                    transfers,
+                    loading,
+                    currentPage,
+                    totalPages,
+                    totalItems,
+                    indexContractAddress,
+                    fromBlock,
+                    toBlock,
+                    canSearch,
+                    canIndex,
+                    pageRange,
+                    searchTransfers,
+                    changePage,
+                    shortenAddress,
+                    formatValue,
+                    formatTimestamp,
+                    startIndexing
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
