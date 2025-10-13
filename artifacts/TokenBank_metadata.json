@@ -1,6 +1,6 @@
 {
 	"compiler": {
-		"version": "0.8.24+commit.e11b9ed9"
+		"version": "0.8.30+commit.73712a01"
 	},
 	"language": "Solidity",
 	"output": {
@@ -33,6 +33,25 @@
 					}
 				],
 				"name": "Deposit",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "previousMultisig",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "newMultisig",
+						"type": "address"
+					}
+				],
+				"name": "MultisigTransferred",
 				"type": "event"
 			},
 			{
@@ -88,6 +107,19 @@
 			},
 			{
 				"inputs": [],
+				"name": "getOwner",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
 				"name": "owner",
 				"outputs": [
 					{
@@ -97,6 +129,19 @@
 					}
 				],
 				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "newAdmin",
+						"type": "address"
+					}
+				],
+				"name": "setAdminSender",
+				"outputs": [],
+				"stateMutability": "nonpayable",
 				"type": "function"
 			},
 			{
@@ -128,7 +173,7 @@
 		"compilationTarget": {
 			"day05/TokenBank.sol": "TokenBank"
 		},
-		"evmVersion": "cancun",
+		"evmVersion": "prague",
 		"libraries": {},
 		"metadata": {
 			"bytecodeHash": "ipfs"
@@ -141,11 +186,11 @@
 	},
 	"sources": {
 		"day05/TokenBank.sol": {
-			"keccak256": "0x774873ac306336904e8d729bcaaa99c7eda1b6655647cedb9960928168023d67",
+			"keccak256": "0xda2fe15eff4b09d936439d02dc510ca19736440544155a8b834212a1785380bb",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://0b62a62e328785fc5c648c3e37b3644c08807e3a89161318eb6097e60d7ea8b0",
-				"dweb:/ipfs/QmTeN68tNA7fLskv3HC5WonKx33BSQV5QDjDpWxCKL7yRr"
+				"bzz-raw://66362171a6a5cb98804092be004af3c8dac1f2843873dc769142e4d8f72c2c3c",
+				"dweb:/ipfs/QmZYCa6eik4sXe7okzPMXMNMq54BVfNVJcXcz198VEeWUX"
 			]
 		},
 		"https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/IERC20.sol": {

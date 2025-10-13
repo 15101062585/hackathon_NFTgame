@@ -1,6 +1,6 @@
 {
 	"compiler": {
-		"version": "0.8.24+commit.e11b9ed9"
+		"version": "0.8.30+commit.73712a01"
 	},
 	"language": "Solidity",
 	"output": {
@@ -37,9 +37,21 @@
 						"type": "address"
 					},
 					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "seller",
+						"type": "address"
+					},
+					{
 						"indexed": false,
 						"internalType": "uint256",
 						"name": "price",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "timestamp",
 						"type": "uint256"
 					}
 				],
@@ -64,7 +76,38 @@
 					{
 						"indexed": false,
 						"internalType": "uint256",
+						"name": "timestamp",
+						"type": "uint256"
+					}
+				],
+				"name": "NFTCancelled",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "seller",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
 						"name": "price",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "timestamp",
 						"type": "uint256"
 					}
 				],
@@ -220,7 +263,7 @@
 		"compilationTarget": {
 			"day06/NFTMarket.sol": "NFTMarket"
 		},
-		"evmVersion": "cancun",
+		"evmVersion": "prague",
 		"libraries": {},
 		"metadata": {
 			"bytecodeHash": "ipfs"
@@ -409,11 +452,11 @@
 			]
 		},
 		"day06/NFTMarket.sol": {
-			"keccak256": "0xc672eabfb528afb619a55ab164ceed47753926bce4982dca2df31af4e283a33e",
+			"keccak256": "0xea62e56484f43220351b0e3d197f2b8662409c74659ff94ede5b32bd9b7599f2",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://6e0442775492aeca203968cb88c79f32268f1c18fd69fc2482791da8e9e54e0e",
-				"dweb:/ipfs/QmZbpe3YwaXZXq3fvaw5Z2zPTMw8HeDEveHubX8SnnGEKC"
+				"bzz-raw://6db9c4ca93a481f904aab91fbd67fea7a4b6cd19556bd127048a6c650e88ddbb",
+				"dweb:/ipfs/QmZwRtXQxjujc4GxZKiK2EikPngErz5qkEuDT9MSPmSQfW"
 			]
 		}
 	},

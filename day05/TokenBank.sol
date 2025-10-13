@@ -13,9 +13,29 @@ contract TokenBank{
 
     event Withdraw(address indexed user,uint256 amount);
 
+    event MultisigTransferred(address indexed previousMultisig, address indexed newMultisig);
+
+
 
     constructor(address tokenAddress) {
         token = IERC20(tokenAddress);
+        owner = msg.sender;
+    }
+
+    modifier onlyMultisig(){
+        require(msg.sender == owner,"Only multisig can call");
+        _;
+    }
+
+    function getOwner() external view returns (address) {
+        return owner;
+    }
+
+    function setAdminSender(address newAdmin) external onlyMultisig  {
+        require(newAdmin != address(0), "Invalid multisig address");
+        require(newAdmin != owner, "New multisig must be different");
+        
+        owner = newAdmin;
     }
 
     function deposit(uint value) public payable{
