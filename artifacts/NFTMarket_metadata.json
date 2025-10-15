@@ -13,13 +13,45 @@
 						"type": "address"
 					},
 					{
-						"internalType": "contract BaseERC20v2",
+						"internalType": "contract MyTokenERC2612",
 						"name": "_tokenContract",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "_whitelistSigner",
 						"type": "address"
 					}
 				],
 				"stateMutability": "nonpayable",
 				"type": "constructor"
+			},
+			{
+				"inputs": [],
+				"name": "ECDSAInvalidSignature",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "length",
+						"type": "uint256"
+					}
+				],
+				"name": "ECDSAInvalidSignatureLength",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "s",
+						"type": "bytes32"
+					}
+				],
+				"name": "ECDSAInvalidSignatureS",
+				"type": "error"
 			},
 			{
 				"anonymous": false,
@@ -115,6 +147,88 @@
 				"type": "event"
 			},
 			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "buyer",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "seller",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "price",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "timestamp",
+						"type": "uint256"
+					}
+				],
+				"name": "NFTWhitelistBought",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "oldSigner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "newSigner",
+						"type": "address"
+					}
+				],
+				"name": "WhitelistSignerUpdated",
+				"type": "event"
+			},
+			{
+				"inputs": [],
+				"name": "DOMAIN_SEPARATOR",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "WHITELIST_TYPEHASH",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
 				"inputs": [
 					{
 						"internalType": "uint256",
@@ -138,6 +252,138 @@
 				"name": "cancelListing",
 				"outputs": [],
 				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_user",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_nftId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_maxPrice",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_deadline",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_nonce",
+						"type": "uint256"
+					}
+				],
+				"name": "debugWhitelistHash",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "domainSeparator",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "typeHash",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "structHash",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "digest",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "recoveredSigner",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "emergencyWithdrawNFT",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getContractInfo",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "nftAddr",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "tokenAddr",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "signerAddr",
+						"type": "address"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "domainSeparator",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getDomainSeparator",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_nonce",
+						"type": "uint256"
+					}
+				],
+				"name": "isNonceUsed",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
 				"type": "function"
 			},
 			{
@@ -201,11 +447,57 @@
 				"type": "function"
 			},
 			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_tokenId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_maxPrice",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_deadline",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bytes",
+						"name": "_signature",
+						"type": "bytes"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_nonce",
+						"type": "uint256"
+					}
+				],
+				"name": "permitBuy",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_newSigner",
+						"type": "address"
+					}
+				],
+				"name": "setWhitelistSigner",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
 				"inputs": [],
 				"name": "tokenContract",
 				"outputs": [
 					{
-						"internalType": "contract BaseERC20v2",
+						"internalType": "contract MyTokenERC2612",
 						"name": "",
 						"type": "address"
 					}
@@ -246,9 +538,58 @@
 				],
 				"stateMutability": "nonpayable",
 				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"name": "usedNonces",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "whitelistSigner",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
 			}
 		],
 		"devdoc": {
+			"errors": {
+				"ECDSAInvalidSignature()": [
+					{
+						"details": "The signature derives the `address(0)`."
+					}
+				],
+				"ECDSAInvalidSignatureLength(uint256)": [
+					{
+						"details": "The signature has an invalid length."
+					}
+				],
+				"ECDSAInvalidSignatureS(bytes32)": [
+					{
+						"details": "The signature has an S value that is in the upper half order."
+					}
+				]
+			},
 			"kind": "dev",
 			"methods": {},
 			"version": 1
@@ -261,7 +602,7 @@
 	},
 	"settings": {
 		"compilationTarget": {
-			"day06/NFTMarket.sol": "NFTMarket"
+			"day13/NFTMarketV2621.sol": "NFTMarket"
 		},
 		"evmVersion": "prague",
 		"libraries": {},
@@ -387,6 +728,14 @@
 				"dweb:/ipfs/QmZbL7XAYr5RmaNaooPgZRmcDXaudfsYQfYD9y5iAECvpS"
 			]
 		},
+		"@openzeppelin/contracts/utils/cryptography/ECDSA.sol": {
+			"keccak256": "0x69f54c02b7d81d505910ec198c11ed4c6a728418a868b906b4a0cf29946fda84",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://8e25e4bdb7ae1f21d23bfee996e22736fc0ab44cfabedac82a757b1edc5623b9",
+				"dweb:/ipfs/QmQdWQvB6JCP9ZMbzi8EvQ1PTETqkcTWrbcVurS7DKpa5n"
+			]
+		},
 		"@openzeppelin/contracts/utils/introspection/ERC165.sol": {
 			"keccak256": "0x2d9dc2fe26180f74c11c13663647d38e259e45f95eb88f57b61d2160b0109d3e",
 			"license": "MIT",
@@ -427,22 +776,6 @@
 				"dweb:/ipfs/QmVUSvooZKEdEdap619tcJjTLcAuH6QBdZqAzWwnAXZAWJ"
 			]
 		},
-		"day05/BaseErc20.sol": {
-			"keccak256": "0xe25b764c951724869545db1ee38b5a75d05e54ce270bfb17760bba165da157e8",
-			"license": "MIT",
-			"urls": [
-				"bzz-raw://ac7d2fac38da4acd91e527af0cd8606e29e6f43582ed2a35dff40c49e8b16249",
-				"dweb:/ipfs/QmZZNE5Qx357qysdNQ5mXMENTbDCrgBhMpRCGiK7HdzAZe"
-			]
-		},
-		"day06/BaseERC20v2.sol": {
-			"keccak256": "0x5842dd957e43626c147d09903aa5f6ebd2dd203b80b6065fc993ae91f78cbec7",
-			"license": "MIT",
-			"urls": [
-				"bzz-raw://bee98de2ff0d6cd67c5840eb920b4e4bcde826b1da2c82fff0bde0e13269c03d",
-				"dweb:/ipfs/Qmdq6nKVWECgZnjKCHPidnDkaeHj2E6nZpZWvZHdXQfGT1"
-			]
-		},
 		"day06/MyNft.sol": {
 			"keccak256": "0xf6b45316eece9ca5a86d762fd0d5111bd5ef9ea7b8e10373bebdabfb8d1e491d",
 			"license": "MIT",
@@ -451,12 +784,20 @@
 				"dweb:/ipfs/QmP9AFKK3c7ZGtcAFjaksyJe7Htp67kX1h3FWz89fM8nwG"
 			]
 		},
-		"day06/NFTMarket.sol": {
-			"keccak256": "0xea62e56484f43220351b0e3d197f2b8662409c74659ff94ede5b32bd9b7599f2",
+		"day13/BaseERC20V2612.sol": {
+			"keccak256": "0x4af32caa37e8a1f82709ba15f0091357a0cbfda98ad8686b6ee321c36d922ef2",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://6db9c4ca93a481f904aab91fbd67fea7a4b6cd19556bd127048a6c650e88ddbb",
-				"dweb:/ipfs/QmZwRtXQxjujc4GxZKiK2EikPngErz5qkEuDT9MSPmSQfW"
+				"bzz-raw://a429f88027fe6d3f40eb5a40ef3c1f91e0dacb11780dc33e2313e49f276032f9",
+				"dweb:/ipfs/QmYGiGajTvUjsNbqAAu9QgGot18fs9HHGdDT6YA9RDN8q7"
+			]
+		},
+		"day13/NFTMarketV2621.sol": {
+			"keccak256": "0xc3f963da4df1d19c921065ffc5124f2bf2d87f0ee6d119d64eaf478681890451",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://a4bf04fa7bb403f5add573cd0fdd0f74f7b4ec4781aabe14f017464f34ddfbab",
+				"dweb:/ipfs/QmfYBJYEoptsxTb2ZG1UsaAmYDUtEPGpDHRnWXVrWC4cVC"
 			]
 		}
 	},

@@ -70,6 +70,25 @@
 						"type": "uint256"
 					}
 				],
+				"name": "PermitDeposit",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "user",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
 				"name": "Withdraw",
 				"type": "event"
 			},
@@ -93,16 +112,16 @@
 				"type": "function"
 			},
 			{
-				"inputs": [
+				"inputs": [],
+				"name": "getBankTokenBalance",
+				"outputs": [
 					{
 						"internalType": "uint256",
-						"name": "value",
+						"name": "",
 						"type": "uint256"
 					}
 				],
-				"name": "deposit",
-				"outputs": [],
-				"stateMutability": "payable",
+				"stateMutability": "view",
 				"type": "function"
 			},
 			{
@@ -113,6 +132,49 @@
 						"internalType": "address",
 						"name": "",
 						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "user",
+						"type": "address"
+					}
+				],
+				"name": "getTokenNonce",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "user",
+						"type": "address"
+					}
+				],
+				"name": "getUserBalances",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "bankBalance",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "tokenBalance",
+						"type": "uint256"
 					}
 				],
 				"stateMutability": "view",
@@ -134,6 +196,82 @@
 			{
 				"inputs": [
 					{
+						"internalType": "uint256",
+						"name": "value",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "deadline",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint8",
+						"name": "v",
+						"type": "uint8"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "r",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "s",
+						"type": "bytes32"
+					}
+				],
+				"name": "permitDeposit",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "value",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "deadline",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint8",
+						"name": "v",
+						"type": "uint8"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "r",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "s",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "callbackTo",
+						"type": "address"
+					},
+					{
+						"internalType": "bytes",
+						"name": "callbackData",
+						"type": "bytes"
+					}
+				],
+				"name": "permitDepositWithCallback",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
 						"internalType": "address",
 						"name": "newAdmin",
 						"type": "address"
@@ -142,6 +280,19 @@
 				"name": "setAdminSender",
 				"outputs": [],
 				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "token",
+				"outputs": [
+					{
+						"internalType": "contract IERC20",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
 				"type": "function"
 			},
 			{
@@ -171,7 +322,7 @@
 	},
 	"settings": {
 		"compilationTarget": {
-			"day05/TokenBank.sol": "TokenBank"
+			"day13/TokenBankV2621.sol": "TokenBank"
 		},
 		"evmVersion": "prague",
 		"libraries": {},
@@ -185,12 +336,12 @@
 		"remappings": []
 	},
 	"sources": {
-		"day05/TokenBank.sol": {
-			"keccak256": "0xda2fe15eff4b09d936439d02dc510ca19736440544155a8b834212a1785380bb",
+		"day13/TokenBankV2621.sol": {
+			"keccak256": "0x2dd17fae4f65e3da37a5d5b914b2489e1e6247bbac1d6518974b88145a314843",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://66362171a6a5cb98804092be004af3c8dac1f2843873dc769142e4d8f72c2c3c",
-				"dweb:/ipfs/QmZYCa6eik4sXe7okzPMXMNMq54BVfNVJcXcz198VEeWUX"
+				"bzz-raw://1492f564c93fa50145a4015e83d82c3ac894c559987a34711edbfcbb1d8a4b22",
+				"dweb:/ipfs/QmYzzvbAS83PdF8Yjc71znc1sBiGEvowmk5pmtMCkj1srK"
 			]
 		},
 		"https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/IERC20.sol": {
