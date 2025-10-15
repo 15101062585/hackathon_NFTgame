@@ -196,7 +196,7 @@ public class EventIndexingService {
     private void initializeTimeWindow() {
         try {
             // 从数据库获取最后处理的时间
-            Long lastTimestamp = transferRepository.findMaxTimestamp();
+            Long lastTimestamp = transferRepository.findMaxTimestamp() != null ? transferRepository.findMaxTimestamp() : null;
             if (lastTimestamp != null && lastTimestamp > 0) {
                 // 从最后处理的时间开始，加1秒避免重复
                 long startTime = lastTimestamp * 1000 + 1000;
