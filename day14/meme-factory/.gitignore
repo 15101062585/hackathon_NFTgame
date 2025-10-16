@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+lib/
+
+# Production
+build/
+out/
+
+# Environment
+.env
+
+# Foundry
+cache/
+broadcast/
