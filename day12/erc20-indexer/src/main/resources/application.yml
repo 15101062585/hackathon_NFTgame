@@ -21,7 +21,21 @@ web3j:
   enabled: true
   offline: false
   # 使用多个备选RPC节点，第一个失败会自动尝试下一个
-  rpc-url: https://1rpc.io/sepolia
+  rpcUrl: https://0xrpc.io/sep
+  #项目私钥
+  privateKey: "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+  contractAddress: "0xYourNFTContractAddress"
+whitelist:
+  default-expiry: 604800 # 7天
+  bronze:
+    max-nft-count: 1
+    max-price: 1000000000000000000 # 1 ETH in wei
+  silver:
+    max-nft-count: 3  
+    max-price: 3000000000000000000 # 3 ETH in wei
+  gold:
+    max-nft-count: 10
+    max-price: 10000000000000000000 # 10 ETH in wei
 
 logging:
   level:

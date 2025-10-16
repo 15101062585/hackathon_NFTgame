@@ -5,8 +5,8 @@ import walletConnect from '../config/walletConnect';
 
 // 合约地址
 const NFT_ADDRESS = '0xEd663faC23dD5D2914E48493fc43639E46C721F3';
-const MARKET_ADDRESS = '0xdb819529f72568472e9b5857741171A4F4AC3258';
-const ERC20_ADDRESS = '0x5F97a3a99B590D93fF798b7dCE5E917d4eEd8778';
+const MARKET_ADDRESS = '0x8b5B47164323d2B276dBe0f8026768A84798A9eb';
+const ERC20_ADDRESS = '0xc015fDD0E388e1B036d86C07899Fe55d07B69DB6';
 
 // 链ID（Sepolia测试网）
 const CHAIN_ID = 11155111;
@@ -24,20 +24,40 @@ const NFT_ABI = [
   "function balanceOf(address owner) view returns (uint256)"
 ];
 
-// 市场合约 ABI
+// 市场合约 ABI - 根据你的合约代码修正
 const MARKET_ABI = [
+  // 基础信息
   "function nftContract() view returns (address)",
   "function tokenContract() view returns (address)",
+  "function whitelistSigner() view returns (address)",
+
+  // listings mapping - 正确的函数签名
   "function listings(uint256) view returns (address seller, uint256 price, bool isListed)",
+
+  // 主要功能
   "function list(uint256 _tokenId, uint256 _price) external",
   "function buyNFT(uint256 _tokenId) external",
-  "function tokensReceived(address _from, address _to, uint256 _value, bytes calldata _data) external returns (bool)",
+  "function permitBuy(uint256 _tokenId, uint256 _maxPrice, uint256 _deadline, bytes memory _signature, uint256 _nonce) external",
   "function cancelListing(uint256 _tokenId) external",
+  "function tokensReceived(address _from, address _to, uint256 _value, bytes calldata _data) external returns (bool)",
+
+  // 白名单相关
+  "function verifyWhitelist(address _user, uint256 _nftId, uint256 _maxPrice, uint256 _deadline, uint256 _nonce, bytes memory _signature) returns (bool)",
+  "function isNonceUsed(uint256 _nonce) view returns (bool)",
+  "function setWhitelistSigner(address _newSigner) external",
+  "function getDomainSeparator() view returns (bytes32)",
+  // 新增的函数
+  "function getContractInfo() view returns (address nftAddr, address tokenAddr, address signerAddr, bytes32 domainSeparator)",
+  "function emergencyWithdrawNFT(uint256 _tokenId) external",
+
+  // 新增的事件
+  "event WhitelistSignerUpdated(address indexed oldSigner, address indexed newSigner)",
+  // 事件
   "event NFTListed(uint256 indexed tokenId, address indexed seller, uint256 price, uint256 timestamp)",
   "event NFTBought(uint256 indexed tokenId, address indexed buyer, address indexed seller, uint256 price, uint256 timestamp)",
-  "event NFTCancelled(uint256 indexed tokenId, address indexed seller, uint256 timestamp)"
+  "event NFTCancelled(uint256 indexed tokenId, address indexed seller, uint256 timestamp)",
+  "event NFTWhitelistBought(uint256 indexed tokenId, address indexed buyer, address indexed seller, uint256 price, uint256 timestamp)"
 ];
-
 // ERC20 代币合约 ABI
 const ERC20_ABI = [
   "function name() view returns (string)",
@@ -78,7 +98,7 @@ const batchProcessor = {
   },
 
   async batchGetListings(marketContract, tokenIds) {
-    const tasks = tokenIds.map(tokenId => 
+    const tasks = tokenIds.map(tokenId =>
       marketContract.listings(tokenId).catch(() => null)
     );
     const results = await this.processBatch(tasks, 3);
@@ -89,7 +109,7 @@ const batchProcessor = {
   },
 
   async batchGetOwners(nftContract, tokenIds) {
-    const tasks = tokenIds.map(tokenId => 
+    const tasks = tokenIds.map(tokenId =>
       nftContract.ownerOf(tokenId).catch(() => null)
     );
     const results = await this.processBatch(tasks, 3);
@@ -107,12 +127,12 @@ const batchProcessor = {
 
       try {
         const tokenURI = await nftContract.tokenURI(tokenId);
-        let metadata = { 
-          name: `NFT #${tokenId}`, 
-          description: '独特的数字艺术品', 
-          image: '' 
+        let metadata = {
+          name: `NFT #${tokenId}`,
+          description: '独特的数字艺术品',
+          image: ''
         };
-        
+
         try {
           const response = await fetch(tokenURI);
           if (response.ok) {
@@ -136,7 +156,7 @@ const batchProcessor = {
     });
 
     const results = await this.processBatch(tasks, 2);
-    return results.map(result => 
+    return results.map(result =>
       result.status === 'fulfilled' ? result.value : null
     ).filter(Boolean);
   }
@@ -156,117 +176,115 @@ export const useContract = () => {
   }, []);
 
   // 初始化合约
-  // 在 useContract.js 中修复 initializeContracts 函数
-// 在 useContract.js 中修复 WalletConnect 处理逻辑
-const initializeContracts = useCallback(async () => {
-  try {
-    setLoading(true);
-    console.log('开始初始化合约...');
-
-    let ethersProvider = null;
-    let ethersSigner = null;
-
-    // 检查 WalletConnect 连接状态
-    const walletConnectClient = walletConnect.getClient();
-    console.log('WalletConnect 连接状态:', walletConnectClient.connected);
-
-    if (walletConnectClient.connected) {
-      console.log('使用 WalletConnect 连接');
-      try {
-        // 使用 WalletConnect 的 provider
-        ethersProvider = walletConnect.getProvider();
-        ethersSigner = walletConnect.getSigner();
-        
-        if (!ethersProvider) {
-          throw new Error('无法获取 WalletConnect provider');
-        }
-        
-        console.log('WalletConnect provider 获取成功');
-        
-        // 验证连接
-        const connectionInfo = walletConnect.getConnectionInfo();
-        console.log('WalletConnect 连接信息:', connectionInfo);
-        
-      } catch (wcError) {
-        console.error('WalletConnect 连接失败:', wcError);
-        // 回退到其他连接方式
-      }
-    }
-
-    // 如果 WalletConnect 不可用，尝试 MetaMask
-    if (!ethersProvider && window.ethereum) {
-      console.log('尝试使用 MetaMask 连接');
-      try {
-        ethersProvider = new ethers.BrowserProvider(window.ethereum);
-        
-        // 检查是否有已连接的账户
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        if (accounts.length > 0) {
-          ethersSigner = await ethersProvider.getSigner();
-          console.log('MetaMask 已连接，地址:', accounts[0]);
-        } else {
-          console.log('MetaMask 未连接，使用只读模式');
-        }
-      } catch (mmError) {
-        console.warn('MetaMask 连接失败:', mmError);
-      }
-    }
-
-    // 如果都没有连接，使用公共 RPC（只读模式）
-    if (!ethersProvider) {
-      console.log('使用公共 RPC 连接（只读模式）');
-      ethersProvider = new ethers.JsonRpcProvider('https://sepolia.infura.io/v3/f30e6c1b7e74434e8a28fba71d8f6331');
-    }
-
-    setProvider(ethersProvider);
-    setSigner(ethersSigner);
-
-    // 创建合约实例
-    console.log('创建合约实例...');
-    const nft = getContract(NFT_ADDRESS, NFT_ABI, ethersSigner || ethersProvider);
-    const market = getContract(MARKET_ADDRESS, MARKET_ABI, ethersSigner || ethersProvider);
-    const erc20 = getContract(ERC20_ADDRESS, ERC20_ABI, ethersSigner || ethersProvider);
-
-    // 简单验证合约（不阻止初始化）
+  const initializeContracts = useCallback(async () => {
     try {
-      const nftName = await nft.name();
-      console.log('NFT合约名称:', nftName);
-    } catch (error) {
-      console.warn('合约验证警告:', error);
-    }
+      setLoading(true);
+      console.log('开始初始化合约...');
 
-    setNftContract(nft);
-    setMarketContract(market);
-    setErc20Contract(erc20);
-    setIsInitialized(true);
-    
-    console.log('🎉 合约初始化成功');
+      let ethersProvider = null;
+      let ethersSigner = null;
 
-  } catch (error) {
-    console.error('❌ 初始化合约失败:', error);
-    
-    // 设置只读模式作为降级方案
-    try {
-      const fallbackProvider = new ethers.JsonRpcProvider('https://sepolia.infura.io/v3/f30e6c1b7e74434e8a28fba71d8f6331');
-      setProvider(fallbackProvider);
-      
-      const nft = getContract(NFT_ADDRESS, NFT_ABI, fallbackProvider);
-      const market = getContract(MARKET_ADDRESS, MARKET_ABI, fallbackProvider);
-      const erc20 = getContract(ERC20_ADDRESS, ERC20_ABI, fallbackProvider);
-      
+      // 检查 WalletConnect 连接状态
+      const walletConnectClient = walletConnect.getClient();
+      console.log('WalletConnect 连接状态:', walletConnectClient.connected);
+
+      if (walletConnectClient.connected) {
+        console.log('使用 WalletConnect 连接');
+        try {
+          // 使用 WalletConnect 的 provider
+          ethersProvider = walletConnect.getProvider();
+          ethersSigner = walletConnect.getSigner();
+
+          if (!ethersProvider) {
+            throw new Error('无法获取 WalletConnect provider');
+          }
+
+          console.log('WalletConnect provider 获取成功');
+
+          // 验证连接
+          const connectionInfo = walletConnect.getConnectionInfo();
+          console.log('WalletConnect 连接信息:', connectionInfo);
+
+        } catch (wcError) {
+          console.error('WalletConnect 连接失败:', wcError);
+          // 回退到其他连接方式
+        }
+      }
+
+      // 如果 WalletConnect 不可用，尝试 MetaMask
+      if (!ethersProvider && window.ethereum) {
+        console.log('尝试使用 MetaMask 连接');
+        try {
+          ethersProvider = new ethers.BrowserProvider(window.ethereum);
+
+          // 检查是否有已连接的账户
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          if (accounts.length > 0) {
+            ethersSigner = await ethersProvider.getSigner();
+            console.log('MetaMask 已连接，地址:', accounts[0]);
+          } else {
+            console.log('MetaMask 未连接，使用只读模式');
+          }
+        } catch (mmError) {
+          console.warn('MetaMask 连接失败:', mmError);
+        }
+      }
+
+      // 如果都没有连接，使用公共 RPC（只读模式）
+      if (!ethersProvider) {
+        console.log('使用公共 RPC 连接（只读模式）');
+        ethersProvider = new ethers.JsonRpcProvider('https://sepolia.infura.io/v3/f30e6c1b7e74434e8a28fba71d8f6331');
+      }
+
+      setProvider(ethersProvider);
+      setSigner(ethersSigner);
+
+      // 创建合约实例
+      console.log('创建合约实例...');
+      const nft = getContract(NFT_ADDRESS, NFT_ABI, ethersSigner || ethersProvider);
+      const market = getContract(MARKET_ADDRESS, MARKET_ABI, ethersSigner || ethersProvider);
+      const erc20 = getContract(ERC20_ADDRESS, ERC20_ABI, ethersSigner || ethersProvider);
+
+      // 简单验证合约（不阻止初始化）
+      try {
+        const nftName = await nft.name();
+        console.log('NFT合约名称:', nftName);
+      } catch (error) {
+        console.warn('合约验证警告:', error);
+      }
+
       setNftContract(nft);
       setMarketContract(market);
       setErc20Contract(erc20);
       setIsInitialized(true);
-      console.log('已降级到只读模式');
-    } catch (fallbackError) {
-      console.error('降级模式也失败:', fallbackError);
-      setIsInitialized(false);
+
+      console.log('🎉 合约初始化成功');
+
+    } catch (error) {
+      console.error('❌ 初始化合约失败:', error);
+
+      // 设置只读模式作为降级方案
+      try {
+        const fallbackProvider = new ethers.JsonRpcProvider('https://sepolia.infura.io/v3/f30e6c1b7e74434e8a28fba71d8f6331');
+        setProvider(fallbackProvider);
+
+        const nft = getContract(NFT_ADDRESS, NFT_ABI, fallbackProvider);
+        const market = getContract(MARKET_ADDRESS, MARKET_ABI, fallbackProvider);
+        const erc20 = getContract(ERC20_ADDRESS, ERC20_ABI, fallbackProvider);
+
+        setNftContract(nft);
+        setMarketContract(market);
+        setErc20Contract(erc20);
+        setIsInitialized(true);
+        console.log('已降级到只读模式');
+      } catch (fallbackError) {
+        console.error('降级模式也失败:', fallbackError);
+        setIsInitialized(false);
+      }
+    } finally {
+      setLoading(false);
     }
-  } finally {
-    setLoading(false);
-  }
-}, [getContract]);
+  }, [getContract]);
 
   // 监听钱包连接状态变化
   useEffect(() => {
@@ -303,10 +321,10 @@ const initializeContracts = useCallback(async () => {
 
     try {
       console.log('尝试通过事件日志获取活跃tokenId...');
-      
+
       const blockNumber = await provider.getBlockNumber();
       const fromBlock = Math.max(0, blockNumber - 10000);
-      
+
       const [listedEvents, cancelledEvents, boughtEvents] = await Promise.all([
         marketContract.queryFilter(marketContract.filters.NFTListed(), fromBlock),
         marketContract.queryFilter(marketContract.filters.NFTCancelled(), fromBlock),
@@ -322,7 +340,7 @@ const initializeContracts = useCallback(async () => {
 
       const activeTokenIds = Array.from(listedTokenIds).map(id => parseInt(id));
       console.log(`通过事件找到 ${activeTokenIds.length} 个活跃NFT`);
-      
+
       return activeTokenIds;
     } catch (error) {
       console.warn('通过事件获取tokenId失败，使用扫描方式:', error);
@@ -330,46 +348,36 @@ const initializeContracts = useCallback(async () => {
     }
   }, [marketContract, provider]);
 
-  // 智能tokenId扫描
   const smartTokenIdScan = useCallback(async () => {
     if (!marketContract) return [];
 
-    console.log('开始智能tokenId扫描...');
-    const activeTokenIds = [];
-    
-    for (let tokenId = 1; tokenId <= 20; tokenId++) {
+    console.log('🔄 开始简单扫描...');
+    const foundNFTs = [];
+
+    // 只检查前10个token，避免复杂错误
+    for (let tokenId = 1; tokenId <= 10; tokenId++) {
       try {
+        console.log(`尝试获取 token #${tokenId}...`);
+
+        // 最简单的调用方式
         const listing = await marketContract.listings(tokenId);
-        if (listing.isListed) {
-          activeTokenIds.push(tokenId);
+
+        if (listing && listing.isListed) {
+          console.log(`✅ 找到上架NFT: #${tokenId}`);
+          foundNFTs.push(tokenId);
         }
       } catch (error) {
-        if (error.message.includes('nonexistent token')) {
-          break;
-        }
+        // 忽略所有错误，继续下一个
+        console.log(`❌ token #${tokenId} 不存在或出错`);
+        continue;
       }
     }
 
-    if (activeTokenIds.length < 5) {
-      for (let tokenId = 21; tokenId <= 50; tokenId++) {
-        try {
-          const listing = await marketContract.listings(tokenId);
-          if (listing.isListed) {
-            activeTokenIds.push(tokenId);
-          }
-        } catch (error) {
-          if (error.message.includes('nonexistent token')) {
-            break;
-          }
-        }
-      }
-    }
-
-    console.log(`智能扫描找到 ${activeTokenIds.length} 个上架NFT`);
-    return activeTokenIds;
+    console.log(`扫描完成，找到 ${foundNFTs.length} 个NFT`);
+    return foundNFTs;
   }, [marketContract]);
 
-  // 获取所有已上架的NFT列表
+  // 获取所有已上架的NFT列表 - 只修复，不添加新功能
   const getListedNFTs = useCallback(async () => {
     if (!marketContract || !nftContract) {
       throw new Error('合约未初始化');
@@ -377,67 +385,72 @@ const initializeContracts = useCallback(async () => {
 
     try {
       setLoading(true);
-      
-      const now = Date.now();
-      const cacheKey = 'listed';
-      if (cache.listedNFTs && (now - (cache.lastFetch.get(cacheKey) || 0) < 2 * 60 * 1000)) {
-        console.log('使用缓存的上架NFT数据');
-        return cache.listedNFTs;
-      }
+      console.log('开始扫描上架NFT...');
 
-      console.log('开始批量获取上架NFT...');
-      
-      let activeTokenIds = await getActiveTokenIdsFromEvents();
-      
-      if (activeTokenIds.length === 0) {
-        activeTokenIds = await smartTokenIdScan();
-      }
+      const activeTokenIds = [];
 
-      if (activeTokenIds.length === 0) {
-        cache.listedNFTs = [];
-        cache.lastFetch.set(cacheKey, now);
-        return [];
-      }
+      // 简单扫描前50个tokenId
+      for (let tokenId = 1; tokenId <= 50; tokenId++) {
+        try {
+          // 直接调用listings函数
+          const listing = await marketContract.listings(tokenId);
 
-      const [listingsResults, metadataResults] = await Promise.all([
-        batchProcessor.batchGetListings(marketContract, activeTokenIds),
-        batchProcessor.batchGetMetadata(nftContract, activeTokenIds)
-      ]);
-
-      const items = [];
-      const metadataMap = new Map(metadataResults.map(item => [item.tokenId, item.metadata]));
-
-      for (const result of listingsResults) {
-        if (result.listing && result.listing.isListed) {
-          const metadata = metadataMap.get(result.tokenId) || {
-            name: `NFT #${result.tokenId}`,
-            description: '独特的数字艺术品',
-            image: `https://picsum.photos/400/400?random=${result.tokenId}`
-          };
-
-          items.push({
-            tokenId: result.tokenId.toString(),
-            seller: result.listing.seller,
-            price: ethers.formatEther(result.listing.price),
-            isListed: true,
-            ...metadata
-          });
+          if (listing.isListed) {
+            console.log(`✅ 找到上架NFT: #${tokenId}, 价格: ${ethers.formatEther(listing.price)} ETH`);
+            activeTokenIds.push(tokenId);
+          }
+        } catch (error) {
+          // 如果token不存在，跳过继续下一个
+          continue;
         }
       }
 
-      console.log(`批量获取到 ${items.length} 个上架NFT`);
-      
-      cache.listedNFTs = items;
-      cache.lastFetch.set(cacheKey, now);
-      
+      console.log(`扫描完成，找到 ${activeTokenIds.length} 个上架NFT`);
+
+      // 获取这些NFT的真实数据
+      const items = [];
+      for (const tokenId of activeTokenIds) {
+        try {
+          const listing = await marketContract.listings(tokenId);
+          const tokenURI = await nftContract.tokenURI(tokenId);
+
+          console.log(`获取NFT #${tokenId} 的元数据:`, tokenURI);
+
+          // 获取真实的NFT元数据
+          const response = await fetch(tokenURI);
+          if (response.ok) {
+            const metadata = await response.json();
+            console.log(`NFT #${tokenId} 的元数据:`, metadata);
+
+            items.push({
+              tokenId: tokenId.toString(),
+              seller: listing.seller,
+              price: ethers.formatEther(listing.price),
+              isListed: true,
+              name: metadata.name || `NFT #${tokenId}`,
+              description: metadata.description || '数字艺术品',
+              image: metadata.image // 真实的NFT图片URL
+            });
+          } else {
+            console.warn(`无法获取NFT #${tokenId} 的元数据`);
+          }
+        } catch (error) {
+          console.warn(`处理NFT #${tokenId} 时出错:`, error.message);
+          // 跳过这个NFT，继续处理下一个
+          continue;
+        }
+      }
+
+      console.log('最终返回的NFT列表:', items);
       return items;
+
     } catch (error) {
       console.error('获取上架NFT失败:', error);
-      throw error;
+      return []; // 返回空数组
     } finally {
       setLoading(false);
     }
-  }, [marketContract, nftContract, getActiveTokenIdsFromEvents, smartTokenIdScan]);
+  }, [marketContract, nftContract]);
 
   // 获取用户拥有的NFT
   const getUserNFTs = useCallback(async (userAddress) => {
@@ -447,11 +460,11 @@ const initializeContracts = useCallback(async () => {
 
     try {
       setLoading(true);
-      
+
       const now = Date.now();
       const cacheKey = `user-${userAddress}`;
-      if (cache.userNFTs.has(cacheKey) && 
-          (now - (cache.lastFetch.get(cacheKey) || 0) < 2 * 60 * 1000)) {
+      if (cache.userNFTs.has(cacheKey) &&
+        (now - (cache.lastFetch.get(cacheKey) || 0) < 2 * 60 * 1000)) {
         console.log('使用缓存的用户NFT数据');
         return cache.userNFTs.get(cacheKey);
       }
@@ -519,10 +532,10 @@ const initializeContracts = useCallback(async () => {
       }
 
       console.log(`批量获取到用户 ${userAddress} 的 ${items.length} 个NFT`);
-      
+
       cache.userNFTs.set(cacheKey, items);
       cache.lastFetch.set(cacheKey, now);
-      
+
       return items;
     } catch (error) {
       console.error('获取用户NFT失败:', error);
@@ -540,7 +553,7 @@ const initializeContracts = useCallback(async () => {
     console.log('缓存已清除');
   }, []);
 
- // 上架NFT
+  // 上架NFT
   const listNFT = useCallback(async (tokenId, price) => {
     if (!marketContract || !signer) {
       throw new Error('合约未初始化或未连接钱包');
@@ -553,7 +566,7 @@ const initializeContracts = useCallback(async () => {
       // 首先检查用户是否拥有该NFT
       const owner = await nftContract.ownerOf(tokenId);
       const userAddress = await signer.getAddress();
-      
+
       if (owner.toLowerCase() !== userAddress.toLowerCase()) {
         throw new Error('您不是该NFT的所有者');
       }
@@ -603,106 +616,273 @@ const initializeContracts = useCallback(async () => {
     }
   }, [marketContract, signer]);
 
-  // 购买NFT（使用代币支付）
-  // 在 useContract.js 中修复 buyNFT 函数
-const buyNFT = useCallback(async (tokenId) => {
-  if (!marketContract || !signer || !erc20Contract) {
-    throw new Error('合约未初始化或未连接钱包');
-  }
-
-  try {
-    setLoading(true);
-    console.log(`开始购买NFT #${tokenId}`);
-
-    const userAddress = await signer.getAddress();
-    console.log('用户地址:', userAddress);
-    
-    // 1. 获取NFT列表信息
-    console.log('获取NFT列表信息...');
-    const listing = await marketContract.listings(tokenId);
-    console.log('列表信息:', listing);
-    
-    if (!listing.isListed) {
-      throw new Error('该NFT未上架');
+  // 购买NFT（使用代币支付）- 保持原有功能不变
+  const buyNFT = useCallback(async (tokenId) => {
+    if (!marketContract || !signer || !erc20Contract) {
+      throw new Error('合约未初始化或未连接钱包');
     }
 
-    const price = listing.price;
-    console.log(`NFT价格: ${ethers.formatEther(price)} ETH`);
+    try {
+      setLoading(true);
+      console.log(`开始购买NFT #${tokenId}`);
 
-    // 2. 检查用户代币余额
-    console.log('检查代币余额...');
-    const tokenBalance = await erc20Contract.balanceOf(userAddress);
-    console.log('用户代币余额:', ethers.formatEther(tokenBalance));
-    
-    if (tokenBalance < price) {
-      throw new Error(`代币余额不足。需要: ${ethers.formatEther(price)}，当前: ${ethers.formatEther(tokenBalance)}`);
-    }
+      const userAddress = await signer.getAddress();
+      console.log('用户地址:', userAddress);
 
-    // 3. 检查代币授权额度
-    console.log('检查授权额度...');
-    const allowance = await erc20Contract.allowance(userAddress, MARKET_ADDRESS);
-    console.log('当前授权额度:', ethers.formatEther(allowance));
-    
-    if (allowance < price) {
-      console.log('授权额度不足，开始授权...');
-      
-      // 授权代币给市场合约
-      const approveTx = await erc20Contract.approve(MARKET_ADDRESS, price);
-      console.log('授权交易已发送:', approveTx.hash);
-      
-      // 等待交易确认
-      const approveReceipt = await approveTx.wait();
-      console.log('授权交易已确认:', approveReceipt.status === 1 ? '成功' : '失败');
-      
-      if (approveReceipt.status !== 1) {
-        throw new Error('代币授权失败');
+      // 1. 获取NFT列表信息
+      console.log('获取NFT列表信息...');
+      const listing = await marketContract.listings(tokenId);
+      console.log('列表信息:', listing);
+
+      if (!listing.isListed) {
+        throw new Error('该NFT未上架');
       }
-      
-      console.log('代币授权成功');
+
+      const price = listing.price;
+      console.log(`NFT价格: ${ethers.formatEther(price)} ETH`);
+
+      // 2. 检查用户代币余额
+      console.log('检查代币余额...');
+      const tokenBalance = await erc20Contract.balanceOf(userAddress);
+      console.log('用户代币余额:', ethers.formatEther(tokenBalance));
+
+      if (tokenBalance < price) {
+        throw new Error(`代币余额不足。需要: ${ethers.formatEther(price)}，当前: ${ethers.formatEther(tokenBalance)}`);
+      }
+
+      // 3. 检查代币授权额度
+      console.log('检查授权额度...');
+      const allowance = await erc20Contract.allowance(userAddress, MARKET_ADDRESS);
+      console.log('当前授权额度:', ethers.formatEther(allowance));
+
+      if (allowance < price) {
+        console.log('授权额度不足，开始授权...');
+
+        // 授权代币给市场合约
+        const approveTx = await erc20Contract.approve(MARKET_ADDRESS, price);
+        console.log('授权交易已发送:', approveTx.hash);
+
+        // 等待交易确认
+        const approveReceipt = await approveTx.wait();
+        console.log('授权交易已确认:', approveReceipt.status === 1 ? '成功' : '失败');
+
+        if (approveReceipt.status !== 1) {
+          throw new Error('代币授权失败');
+        }
+
+        console.log('代币授权成功');
+      }
+
+      // 4. 购买NFT
+      console.log('开始购买NFT...');
+      const buyTx = await marketContract.buyNFT(tokenId);
+      console.log('购买交易已发送:', buyTx.hash);
+
+      // 等待交易确认
+      const buyReceipt = await buyTx.wait();
+      console.log('购买交易已确认:', buyReceipt.status === 1 ? '成功' : '失败');
+
+      if (buyReceipt.status !== 1) {
+        throw new Error('NFT购买交易失败');
+      }
+
+      console.log(`NFT #${tokenId} 购买成功`);
+      return true;
+
+    } catch (error) {
+      console.error('NFT购买失败:', error);
+
+      // 提供更具体的错误信息
+      let errorMessage = '购买失败';
+      if (error.message.includes('user rejected')) {
+        errorMessage = '用户拒绝了交易';
+      } else if (error.message.includes('insufficient funds')) {
+        errorMessage = '燃料费不足';
+      } else if (error.message.includes('execution reverted')) {
+        errorMessage = '合约执行失败，请检查NFT状态';
+      } else if (error.message.includes('nonce')) {
+        errorMessage = '交易nonce错误，请重试';
+      } else if (error.message.includes('代币余额不足')) {
+        errorMessage = error.message;
+      } else if (error.message.includes('未上架')) {
+        errorMessage = error.message;
+      } else {
+        errorMessage = `购买失败: ${error.message}`;
+      }
+
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [marketContract, erc20Contract, signer]);
+
+  // 在 useContract.js 中修复 permitBuy 函数
+  const permitBuy = useCallback(async (tokenId, maxPrice,deadline,signature,   nonce) => {
+    if (!marketContract || !signer) {
+      throw new Error('合约未初始化或未连接钱包');
     }
 
-    // 4. 购买NFT
-    console.log('开始购买NFT...');
-    const buyTx = await marketContract.buyNFT(tokenId);
-    console.log('购买交易已发送:', buyTx.hash);
-    
-    // 等待交易确认
-    const buyReceipt = await buyTx.wait();
-    console.log('购买交易已确认:', buyReceipt.status === 1 ? '成功' : '失败');
-    
-    if (buyReceipt.status !== 1) {
-      throw new Error('NFT购买交易失败');
-    }
+    try {
+      setLoading(true);
 
-    console.log(`NFT #${tokenId} 购买成功`);
-    return true;
-    
-  } catch (error) {
-    console.error('NFT购买失败:', error);
-    
-    // 提供更具体的错误信息
-    let errorMessage = '购买失败';
-    if (error.message.includes('user rejected')) {
-      errorMessage = '用户拒绝了交易';
-    } else if (error.message.includes('insufficient funds')) {
-      errorMessage = '燃料费不足';
-    } else if (error.message.includes('execution reverted')) {
-      errorMessage = '合约执行失败，请检查NFT状态';
-    } else if (error.message.includes('nonce')) {
-      errorMessage = '交易nonce错误，请重试';
-    } else if (error.message.includes('代币余额不足')) {
-      errorMessage = error.message;
-    } else if (error.message.includes('未上架')) {
-      errorMessage = error.message;
-    } else {
-      errorMessage = `购买失败: ${error.message}`;
+      console.log('🎯 开始执行白名单购买...');
+
+      // 验证参数
+      if (!signature || !maxPrice || !deadline || !nonce) {
+        throw new Error('缺少必要的白名单参数');
+      }
+
+      // 转换参数类型
+      const tokenIdNum = Number(tokenId);
+      const maxPriceBigInt = BigInt(maxPrice);
+      const deadlineBigInt = BigInt(deadline);
+      const nonceBigInt = BigInt(nonce);
+
+      console.log('=== 完整参数 ===');
+      console.log('TokenID:', tokenIdNum);
+      console.log('MaxPrice:', maxPriceBigInt.toString());
+      console.log('Deadline:', deadlineBigInt.toString());
+      console.log('Nonce:', nonceBigInt.toString());
+      console.log('Signature:', signature);
+      console.log('Signature长度:', signature.length);
+
+      // 1. 检查NFT状态
+      console.log('1. 🔍 检查NFT状态...');
+      const listing = await marketContract.listings(tokenIdNum);
+      console.log('NFT列表信息:', {
+        seller: listing.seller,
+        price: listing.price.toString(),
+        isListed: listing.isListed
+      });
+
+      if (!listing.isListed) {
+        throw new Error('NFT未上架');
+      }
+
+      const nftPrice = listing.price;
+      console.log('NFT价格:', ethers.formatEther(nftPrice));
+
+      // 2. 检查价格是否在限制范围内
+      if (nftPrice > maxPriceBigInt) {
+        throw new Error(`NFT价格 ${ethers.formatEther(nftPrice)} ETH 超过白名单限制 ${ethers.formatEther(maxPriceBigInt)} ETH`);
+      }
+
+      // 3. 检查nonce是否已使用
+      console.log('2. 🔄 检查Nonce状态...');
+      const isNonceUsed = await marketContract.isNonceUsed(nonceBigInt);
+      console.log('Nonce使用状态:', isNonceUsed);
+      if (isNonceUsed) {
+        throw new Error('Nonce已被使用，请重新获取签名');
+      }
+
+      // 4. 检查代币授权
+      console.log('3. 💰 检查代币授权...');
+      const userAddress = await signer.getAddress();
+      const allowance = await erc20Contract.allowance(userAddress, MARKET_ADDRESS);
+      console.log('当前授权额度:', ethers.formatEther(allowance));
+
+      if (allowance < nftPrice) {
+        console.log('授权额度不足，开始授权...');
+        const approveTx = await erc20Contract.approve(MARKET_ADDRESS, nftPrice);
+        console.log('授权交易哈希:', approveTx.hash);
+        await approveTx.wait();
+        console.log('代币授权成功');
+      }
+
+      // 5. 尝试静态调用（模拟执行）
+      console.log('4. 🧪 静态调用测试...');
+      try {
+        const staticResult = await marketContract.permitBuy.staticCall(
+          tokenIdNum,
+          maxPriceBigInt,
+          deadlineBigInt,
+          signature,
+          nonceBigInt
+        );
+        console.log('✅ 静态调用成功');
+      } catch (staticError) {
+        console.error('❌ 静态调用失败:', staticError.message);
+
+        // 分析具体错误
+        if (staticError.message.includes('Invalid whitelist signature')) {
+          throw new Error('白名单签名验证失败 - 签名数据不正确');
+        } else if (staticError.message.includes('Signature expired')) {
+          throw new Error('签名已过期');
+        } else if (staticError.message.includes('Price exceeds whitelist limit')) {
+          throw new Error('价格超过白名单限制');
+        } else if (staticError.message.includes('Nonce already used')) {
+          throw new Error('Nonce已被使用');
+        } else {
+          throw new Error(`合约验证失败: ${staticError.message}`);
+        }
+      }
+
+      // 6. 执行真实交易
+      console.log('5. 🚀 执行真实交易...');
+      const tx = await marketContract.permitBuy(
+        tokenIdNum,
+        maxPriceBigInt,
+        deadlineBigInt,
+        signature,
+        nonceBigInt,
+        {
+          gasLimit: 300000 // 确保足够的gas
+        }
+      );
+
+      console.log('交易已发送，哈希:', tx.hash);
+      const receipt = await tx.wait();
+
+      if (receipt.status === 1) {
+        console.log('🎉 白名单购买成功!');
+        return true;
+      } else {
+        throw new Error('交易执行失败');
+      }
+
+    } catch (error) {
+      console.error('❌ 白名单购买失败:', error);
+
+      // 提供更具体的错误信息
+      let errorMessage = error.message;
+      if (error.message.includes('user rejected')) {
+        errorMessage = '用户取消了交易';
+      } else if (error.message.includes('insufficient funds')) {
+        errorMessage = '燃料费不足';
+      } else if (error.message.includes('execution reverted')) {
+        errorMessage = '合约执行失败，请检查签名数据';
+      }
+
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
     }
-    
-    throw new Error(errorMessage);
-  } finally {
-    setLoading(false);
-  }
-}, [marketContract, erc20Contract, signer]);
+  }, [marketContract, erc20Contract, signer]);
+
+  // 在useContract中添加调试方法
+  const debugWhitelist = useCallback(async (whitelistData, tokenId) => {
+    if (!marketContract) return;
+
+    try {
+      console.log('🔧 白名单调试信息:');
+
+      // 检查域分隔符
+      const domainSeparator = await marketContract.getDomainSeparator();
+      console.log('域分隔符:', domainSeparator);
+
+      // 检查白名单签名者
+      const whitelistSigner = await marketContract.whitelistSigner();
+      console.log('合约白名单签名者:', whitelistSigner);
+      console.log('后端签名者:', whitelistData.signerAddress);
+
+      // 检查nonce
+      const isNonceUsed = await marketContract.isNonceUsed(whitelistData.nonce);
+      console.log('Nonce使用状态:', isNonceUsed);
+
+    } catch (error) {
+      console.error('调试失败:', error);
+    }
+  }, [marketContract]);
 
   // 使用 transferWithCallback 购买NFT（高级功能）
   const buyNFTWithCallback = useCallback(async (tokenId) => {
@@ -715,7 +895,7 @@ const buyNFT = useCallback(async (tokenId) => {
       console.log(`使用回调方式购买NFT #${tokenId}`);
 
       const userAddress = await signer.getAddress();
-      
+
       // 获取NFT价格
       const listing = await marketContract.listings(tokenId);
       if (!listing.isListed) {
@@ -746,6 +926,34 @@ const buyNFT = useCallback(async (tokenId) => {
       setLoading(false);
     }
   }, [marketContract, erc20Contract, signer]);
+
+  // 在 useContract.js 的返回对象中添加
+  const verifyContract = useCallback(async () => {
+    if (!marketContract) return null;
+
+    try {
+      console.log('🔍 验证新合约...');
+      const info = await marketContract.getContractInfo();
+
+      console.log('✅ 合约验证成功:');
+      console.log('- NFT合约:', info.nftAddr);
+      console.log('- 代币合约:', info.tokenAddr);
+      console.log('- 白名单签名者:', info.signerAddr);
+      console.log('- 域分隔符:', info.domainSeparator);
+
+      // 检查域分隔符
+      const isDomainInitialized = info.domainSeparator !== '0x0000000000000000000000000000000000000000000000000000000000000000';
+      console.log('- 域分隔符已初始化:', isDomainInitialized);
+
+      return {
+        ...info,
+        isDomainInitialized
+      };
+    } catch (error) {
+      console.error('合约验证失败:', error);
+      return null;
+    }
+  }, [marketContract]);
 
   // 获取ERC20代币余额
   const getTokenBalance = useCallback(async (userAddress) => {
@@ -829,11 +1037,13 @@ const buyNFT = useCallback(async (tokenId) => {
     listNFT,
     cancelListing,
     buyNFT,
+    permitBuy, // 新增：白名单购买函数
     buyNFTWithCallback,
     getTokenBalance,
     checkApproval,
     mintNFT,
     initializeContracts,
-    clearCache
+    clearCache ,
+    verifyContract
   };
 };

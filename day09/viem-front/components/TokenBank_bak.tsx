@@ -5,17 +5,14 @@ import {
   useAccount, 
   useReadContract, 
   useWriteContract,
-  useWaitForTransactionReceipt,
-  useSignTypedData,
-  useChainId
+  useWaitForTransactionReceipt
 } from 'wagmi'
-import Link from 'next/link'
+import Link from 'next/link' // 添加这行
 
+const TOKEN_BANK_ADDRESS = '0xa6648A516d8e50A9665Fac19D564Ae44E73b9164'
+const TOKEN_ADDRESS = '0x5F97a3a99B590D93fF798b7dCE5E917d4eEd8778'
 
-const TOKEN_BANK_ADDRESS = '0xF365B064a105c324755ed32e31F3aBeaAA1EFDE5'
-const TOKEN_ADDRESS = '0xc015fDD0E388e1B036d86C07899Fe55d07B69DB6'
-
-// ERC20 ABI（包含 EIP-2612）
+// ERC20 ABI
 const erc20ABI = [
   {
     inputs: [{ name: "_owner", type: "address" }],
@@ -64,32 +61,10 @@ const erc20ABI = [
     outputs: [{ name: "success", type: "bool" }],
     stateMutability: "nonpayable",
     type: "function"
-  },
-  // EIP-2612 相关函数
-  {
-    inputs: [{ name: "owner", type: "address" }],
-    name: "nonces",
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function"
-  },
-  {
-    inputs: [],
-    name: "DOMAIN_SEPARATOR",
-    outputs: [{ name: "", type: "bytes32" }],
-    stateMutability: "view",
-    type: "function"
-  },
-  {
-    inputs: [],
-    name: "name",
-    outputs: [{ name: "", type: "string" }],
-    stateMutability: "view",
-    type: "function"
   }
 ] as const
 
-// TokenBank ABI（包含 permitDeposit）
+// TokenBank ABI
 const tokenBankABI = [
   {
     inputs: [{ name: "_user", type: "address" }],
@@ -111,45 +86,6 @@ const tokenBankABI = [
     outputs: [],
     stateMutability: "nonpayable",
     type: "function"
-  },
-  // EIP-2612 存款功能
-  {
-    inputs: [
-      { name: "value", type: "uint256" },
-      { name: "deadline", type: "uint256" },
-      { name: "v", type: "uint8" },
-      { name: "r", type: "bytes32" },
-      { name: "s", type: "bytes32" }
-    ],
-    name: "permitDeposit",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function"
-  },
-  // 辅助函数
-  {
-    inputs: [{ name: "user", type: "address" }],
-    name: "getTokenNonce",
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function"
-  },
-  {
-    inputs: [],
-    name: "getBankTokenBalance",
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function"
-  },
-  {
-    inputs: [{ name: "user", type: "address" }],
-    name: "getUserBalances",
-    outputs: [
-      { name: "bankBalance", type: "uint256" },
-      { name: "tokenBalance", type: "uint256" }
-    ],
-    stateMutability: "view",
-    type: "function"
   }
 ] as const
 
@@ -158,16 +94,7 @@ export default function TokenBank() {
   const [depositAmount, setDepositAmount] = useState('')
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [approveAmount, setApproveAmount] = useState('')
-  const [permitDepositAmount, setPermitDepositAmount] = useState('')
   const [debugInfo, setDebugInfo] = useState<any>({})
-  const [isPermitSigning, setIsPermitSigning] = useState(false)
-
-  // 读取代币名称（用于 EIP-712 签名）
-  const { data: tokenName } = useReadContract({
-    address: TOKEN_ADDRESS,
-    abi: erc20ABI,
-    functionName: 'name',
-  })
 
   // 读取用户代币余额
   const { data: tokenBalance, refetch: refetchTokenBalance } = useReadContract({
@@ -197,17 +124,6 @@ export default function TokenBank() {
     abi: erc20ABI,
     functionName: 'allowance',
     args: [address!, TOKEN_BANK_ADDRESS],
-    query: {
-      enabled: !!address,
-    },
-  })
-
-  // 读取用户的 nonce
-  const { data: nonce, refetch: refetchNonce } = useReadContract({
-    address: TOKEN_ADDRESS,
-    abi: erc20ABI,
-    functionName: 'nonces',
-    args: [address!],
     query: {
       enabled: !!address,
     },
@@ -248,17 +164,6 @@ export default function TokenBank() {
     error: withdrawError 
   } = useWriteContract()
 
-  // Permit 存款交易
-  const { 
-    data: permitDepositHash,
-    writeContract: permitDeposit,
-    isPending: isPermitDepositPending,
-    error: permitDepositError 
-  } = useWriteContract()
-
-  // EIP-712 签名
-  const { signTypedDataAsync, isPending: isSigning } = useSignTypedData()
-
   // 等待批准交易确认
   const { isLoading: isApproveConfirming, isSuccess: isApproveSuccess } = 
     useWaitForTransactionReceipt({
@@ -277,12 +182,6 @@ export default function TokenBank() {
       hash: withdrawHash,
     })
 
-  // 等待 Permit 存款交易确认
-  const { isLoading: isPermitDepositConfirming, isSuccess: isPermitDepositSuccess } = 
-    useWaitForTransactionReceipt({
-      hash: permitDepositHash,
-    })
-
   // 收集调试信息
   useEffect(() => {
     setDebugInfo({
@@ -291,34 +190,24 @@ export default function TokenBank() {
       depositBalance: depositBalance?.toString(),
       allowance: allowance?.toString(),
       tokenBankTokenBalance: tokenBankTokenBalance?.toString(),
-      nonce: nonce?.toString(),
-      tokenName,
       isDepositSuccess,
       isWithdrawSuccess,
-      isApproveSuccess,
-      isPermitDepositSuccess
+      isApproveSuccess
     })
-  }, [
-    address, tokenBalance, depositBalance, allowance, tokenBankTokenBalance, 
-    nonce, tokenName, isDepositSuccess, isWithdrawSuccess, isApproveSuccess, isPermitDepositSuccess
-  ])
+  }, [address, tokenBalance, depositBalance, allowance, tokenBankTokenBalance, isDepositSuccess, isWithdrawSuccess, isApproveSuccess])
 
   // 交易成功后刷新所有数据
   useEffect(() => {
-    if (isDepositSuccess || isWithdrawSuccess || isApproveSuccess || isPermitDepositSuccess) {
+    if (isDepositSuccess || isWithdrawSuccess || isApproveSuccess) {
       console.log('刷新数据...')
       setTimeout(() => {
         refetchDepositBalance()
         refetchTokenBalance()
         refetchTokenBankTokenBalance()
         refetchAllowance()
-        refetchNonce()
-      }, 2000)
+      }, 2000) // 等待2秒让区块链状态更新
     }
-  }, [
-    isDepositSuccess, isWithdrawSuccess, isApproveSuccess, isPermitDepositSuccess,
-    refetchDepositBalance, refetchTokenBalance, refetchTokenBankTokenBalance, refetchAllowance, refetchNonce
-  ])
+  }, [isDepositSuccess, isWithdrawSuccess, isApproveSuccess, refetchDepositBalance, refetchTokenBalance, refetchTokenBankTokenBalance, refetchAllowance])
 
   // 处理批准
   const handleApprove = async () => {
@@ -361,87 +250,6 @@ export default function TokenBank() {
       args: [amount],
     })
   }
-  const chainId = useChainId()
-  // 处理 EIP-2612 签名存款
-  const handlePermitDeposit = async () => {
-    if (!permitDepositAmount || !address || !tokenName) return
-
-    try {
-      setIsPermitSigning(true)
-      
-      const amount = BigInt(Number(permitDepositAmount) * 10 ** 18)
-      const deadline = Math.floor(Date.now() / 1000) + 3600 // 1小时后过期
-      const currentNonce = nonce || BigInt(0)
-
-      console.log('Permit 存款参数:', {
-        amount: amount.toString(),
-        deadline,
-        nonce: currentNonce.toString()
-      })
-
-      // EIP-712 签名数据
-      const domain = {
-        name: tokenName,
-        version: '1',
-        chainId: chainId, // 根据你的网络修改
-        verifyingContract: TOKEN_ADDRESS,
-      }
-
-      const types = {
-        Permit: [
-          { name: 'owner', type: 'address' },
-          { name: 'spender', type: 'address' },
-          { name: 'value', type: 'uint256' },
-          { name: 'nonce', type: 'uint256' },
-          { name: 'deadline', type: 'uint256' },
-        ],
-      }
-
-      const value = {
-        owner: address,
-        spender: TOKEN_BANK_ADDRESS,
-        value: amount,
-        nonce: currentNonce,
-        deadline: BigInt(deadline),
-      }
-
-      // 签名
-      console.log('开始 EIP-712 签名...')
-      const message = {
-        owner: address,
-        spender: TOKEN_BANK_ADDRESS,
-        value: amount,
-        nonce: currentNonce,
-        deadline: BigInt(deadline),
-      }
-      // 添加 primaryType
-      const data = {
-        domain,
-        types,
-        primaryType: 'Permit', // 必须添加这一行
-        message,
-      }
-      const signature = await signTypedDataAsync(data)
-      console.log('签名结果:', signature)
-
-      // 分割签名
-      const sig = splitSignature(signature)
-
-      // 调用 permitDeposit
-      console.log('调用 permitDeposit...')
-      permitDeposit({
-        address: TOKEN_BANK_ADDRESS,
-        abi: tokenBankABI,
-        functionName: 'permitDeposit',
-        args: [amount, BigInt(deadline), sig.v, sig.r, sig.s],
-      })
-
-    } catch (error) {
-      console.error('Permit 存款错误:', error)
-    } finally {
-      setIsPermitSigning(false)
-    }
-  }
 
   // 处理取款
   const handleWithdraw = async () => {
@@ -462,7 +270,7 @@ export default function TokenBank() {
   const handleApproveInfinite = async () => {
     if (!address) return
 
-    const infiniteAmount = BigInt(2) ** BigInt(256) - BigInt(1)
+    const infiniteAmount = BigInt(2) ** BigInt(256) - BigInt(1) // 最大uint256值
     console.log('批准无限额度:', infiniteAmount.toString())
     
     approve({
@@ -487,7 +295,7 @@ export default function TokenBank() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-800">TokenBank 存款系统</h1>
-            <p className="text-gray-600 mt-1">支持 EIP-2612 离线签名存款</p>
+            <p className="text-gray-600 mt-1">管理您的代币存款和取款</p>
           </div>
           <div className="flex gap-3">
             <Link 
@@ -500,7 +308,6 @@ export default function TokenBank() {
           </div>
         </div>
       </div>
-
       {/* 调试信息 */}
       <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
         <h3 className="text-lg font-semibold text-yellow-800 mb-2">调试信息</h3>
@@ -509,7 +316,7 @@ export default function TokenBank() {
         </pre>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {/* 代币余额卡片 */}
         <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
           <h3 className="text-lg font-semibold text-blue-800 mb-2">代币余额</h3>
@@ -545,64 +352,13 @@ export default function TokenBank() {
           </p>
           <p className="text-sm text-orange-500 mt-1">TokenBank 可使用的额度</p>
         </div>
-
-        {/* Nonce */}
-        <div className="bg-indigo-50 rounded-xl p-6 border border-indigo-200">
-          <h3 className="text-lg font-semibold text-indigo-800 mb-2">当前 Nonce</h3>
-          <p className="text-2xl font-bold text-indigo-600">
-            {nonce ? nonce.toString() : '0'}
-          </p>
-          <p className="text-sm text-indigo-500 mt-1">用于 EIP-2612 签名</p>
-        </div>
       </div>
 
-      {/* EIP-2612 签名存款 */}
-      <div className="bg-gradient-to-r from-purple-500 to-pink-500 border border-purple-200 rounded-xl p-6">
-        <h3 className="text-xl font-semibold text-white mb-4">✨ EIP-2612 签名存款</h3>
-        <p className="text-purple-100 mb-4">
-          无需预先批准交易，一次性完成签名授权和存款，节省 Gas 费！
-        </p>
+      {/* 批准功能 */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h3 className="text-xl font-semibold text-gray-800 mb-4">批准代币</h3>
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-white mb-2">
-              存款金额
-            </label>
-            <input
-              type="number"
-              value={permitDepositAmount}
-              onChange={(e) => setPermitDepositAmount(e.target.value)}
-              placeholder="输入存款金额"
-              className="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-white focus:border-white bg-white/90"
-            />
-          </div>
-          <button
-            onClick={handlePermitDeposit}
-            disabled={isPermitSigning || isSigning || isPermitDepositPending || isPermitDepositConfirming || !permitDepositAmount}
-            className="w-full bg-white hover:bg-gray-100 disabled:bg-gray-300 text-purple-600 font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
-          >
-            {isPermitSigning || isSigning ? (
-              <>✍️ 签名中...</>
-            ) : isPermitDepositPending || isPermitDepositConfirming ? (
-              <>⏳ 存款处理中...</>
-            ) : (
-              <>✨ 签名并存款</>
-            )}
-          </button>
-          {permitDepositError && (
-            <p className="text-red-200 text-sm">签名存款错误: {permitDepositError.message}</p>
-          )}
-          {isPermitDepositSuccess && (
-            <p className="text-green-200 text-sm">签名存款成功!</p>
-          )}
-        </div>
-      </div>
-
-      {/* 传统存款方式 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 批准功能 */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">传统批准方式</h3>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 批准金额
@@ -615,66 +371,68 @@ export default function TokenBank() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               />
             </div>
-            <button
-              onClick={handleApprove}
-              disabled={isApprovePending || isApproveConfirming || !approveAmount}
-              className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-            >
-              {isApprovePending || isApproveConfirming ? '批准中...' : '批准代币'}
-            </button>
-            
-            <div className="border-t pt-4">
+            <div className="flex items-end">
               <button
-                onClick={handleApproveInfinite}
-                disabled={isApprovePending || isApproveConfirming}
-                className="w-full bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+                onClick={handleApprove}
+                disabled={isApprovePending || isApproveConfirming || !approveAmount}
+                className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
               >
-                {isApprovePending || isApproveConfirming ? '批准中...' : '批准无限额度'}
+                {isApprovePending || isApproveConfirming ? '批准中...' : '批准代币'}
               </button>
-              <p className="text-sm text-gray-500 mt-2 text-center">
-                无限额度授权后，后续存款无需再次批准
-              </p>
             </div>
-
-            {approveError && (
-              <p className="text-red-500 text-sm">批准错误: {approveError.message}</p>
-            )}
-            {isApproveSuccess && (
-              <p className="text-green-500 text-sm">批准成功!</p>
-            )}
           </div>
-        </div>
-
-        {/* 存款功能 */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">传统存款方式</h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                存款金额
-              </label>
-              <input
-                type="number"
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
-                placeholder="输入存款金额"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+          
+          <div className="border-t pt-4">
             <button
-              onClick={handleDeposit}
-              disabled={isDepositPending || isDepositConfirming || !depositAmount}
-              className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+              onClick={handleApproveInfinite}
+              disabled={isApprovePending || isApproveConfirming}
+              className="w-full bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
             >
-              {isDepositPending || isDepositConfirming ? '存款中...' : '存款'}
+              {isApprovePending || isApproveConfirming ? '批准中...' : '批准无限额度'}
             </button>
-            {depositError && (
-              <p className="text-red-500 text-sm">存款错误: {depositError.message}</p>
-            )}
-            {isDepositSuccess && (
-              <p className="text-green-500 text-sm">存款成功!</p>
-            )}
+            <p className="text-sm text-gray-500 mt-2 text-center">
+              无限额度授权后，后续存款无需再次批准
+            </p>
           </div>
+
+          {approveError && (
+            <p className="text-red-500 text-sm">批准错误: {approveError.message}</p>
+          )}
+          {isApproveSuccess && (
+            <p className="text-green-500 text-sm">批准成功!</p>
+          )}
+        </div>
+      </div>
+
+      {/* 存款功能 */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h3 className="text-xl font-semibold text-gray-800 mb-4">存款</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              存款金额
+            </label>
+            <input
+              type="number"
+              value={depositAmount}
+              onChange={(e) => setDepositAmount(e.target.value)}
+              placeholder="输入存款金额"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <button
+            onClick={handleDeposit}
+            disabled={isDepositPending || isDepositConfirming || !depositAmount}
+            className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+          >
+            {isDepositPending || isDepositConfirming ? '存款中...' : '存款'}
+          </button>
+          {depositError && (
+            <p className="text-red-500 text-sm">存款错误: {depositError.message}</p>
+          )}
+          {isDepositSuccess && (
+            <p className="text-green-500 text-sm">存款成功!</p>
+          )}
         </div>
       </div>
 
@@ -711,18 +469,4 @@ export default function TokenBank() {
       </div>
     </div>
   )
-}
-
-// 辅助函数：分割签名
-// 辅助函数：分割签名
-function splitSignature(signature: string) {
-  if (!signature.startsWith('0x') || signature.length !== 132) {
-    throw new Error('Invalid signature format')
-  }
-  
-  const r = '0x' + signature.slice(2, 66)
-  const s = '0x' + signature.slice(66, 130)
-  const v = parseInt(signature.slice(130, 132), 16)
-  
-  return { v, r, s }
 }
